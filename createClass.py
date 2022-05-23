@@ -7,6 +7,7 @@ from rich.console import Console
 from dbManager import DB
 import styles
 from constants import Constants
+from utilities import *
 
 # Defining some constants
 CENTER = 'center'
@@ -43,7 +44,7 @@ def importFromCSV(newDB: DB):
         for i in reader:    # Loops over each line in the csv file.
 
             # Add a cloumn with name same as enroll_num to "attendence" table
-            newDB.addCol('attendence', '\"'+i[0]+'\"')
+            newDB.addCol('attendence', '\"'+i[0]+'\"',"INTEGER")
 
             # Add details of student from csv to the "student_details" table
             #
@@ -108,14 +109,7 @@ def createClass():
         style=styles.INSTRUCTION_B, justify=CENTER, end=""
     )
 
-    inp = input()   # Initial input
-    while inp not in ('1', '2'):
-        # Loop till a valid input is entered.
-        CON.print(
-            "Invalid input... Please Retry !!",
-            style=styles.ERROR, justify=CENTER
-        )
-        inp = input()
+    inp = getMultipleChoiceInp(('1', '2'),CON)
 
     # Call appropriate functions based on the input.
     if inp == '1':

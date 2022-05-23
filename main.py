@@ -2,34 +2,38 @@ from rich.console import Console
 
 from constants import Constants
 import styles
-from markAttendence import markAttendence
+import markAttendence
+from utilities import *
+import createClass
 
 # Setting up constant variables
-Constants.HOME_DIR="./"
-Constants.DATA_DIR="./data"
-Constants.LOGGING_DIR='./logs'
+Constants.HOME_DIR = "./"
+Constants.DATA_DIR = "./data"
+Constants.LOGGING_DIR = './logs'
 Constants.setupLogger()
 
-# Creating an console object
+CENTER = 'center'
 CON = Console()
 
 # Print welcome message
-CON.print(("="*36), justify="center", style=styles.HEADING)
-CON.print("|| Welcome to attendence manager. ||", style=styles.HEADING_B, justify="center")
-CON.print(("="*36)+'\n', style=styles.HEADING, justify="center")
+CON.print(("="*36), justify=CENTER, style=styles.HEADING)
+CON.print(
+    "|| Welcome to attendence manager. ||",
+    style=styles.HEADING_B, justify=CENTER
+)
+CON.print(("="*36)+'\n', style=styles.HEADING, justify=CENTER)
 
 # Print first instruction
-instruction = '''1 - Mark attendence.\n2 - Create new class.'''
-CON.print(instruction, justify="center", style=styles.INSTRUCTION_B)
+CON.print(
+    "1 - Mark attendence.\n2 - Create new class.",
+    justify=CENTER, style=styles.INSTRUCTION_B
+)
 
-validInps = ('1', '2')  # Tuple of valid inputs
-inp = input()   # Initial input
+# Get input for first instruction
+inp = getMultipleChoiceInp(('1', '2'), CON)
 
-while inp not in validInps:
-    # Loop till a valid input is given.
-    CON.print("Invalid Option. Please Retry !!", style=styles.ERROR, justify='center')
-    inp = input()
-
-# If user selects '1' call markAttendence 
+# If user selects '1' call markAttendence
 if inp == '1':
-    markAttendence()
+    markAttendence.main()
+elif inp == '2':
+    createClass.createClass()

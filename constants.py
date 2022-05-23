@@ -15,9 +15,7 @@ class Constants:
             lambda x: True if x.endswith('.db') else False,
             os.listdir(Constants.DATA_DIR)
         )):
-
-            if i[:-14]+'.data.db' in os.listdir(Constants.DATA_DIR):
-                lst.append(i[:-14])
+            lst.append(i[:-3])
         return lst
 
     @classmethod

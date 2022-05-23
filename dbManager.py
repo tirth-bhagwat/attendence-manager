@@ -1,5 +1,16 @@
+import functools
 import sqlite3
 import re
+
+
+def tupleToSQL(tup):
+    tup = ('',)+tup
+    return str(
+        functools.reduce(
+            lambda i, j: f'''{i},"{j}"''',
+            tup
+        )
+    )[1:]
 
 
 class DB:
@@ -70,7 +81,25 @@ class DB:
         except sqlite3.Error as err:
             return err
 
-# db3=DB('./data/db3.db')
+    def readRows(self, tableName, columns, where=''):
+        try:
+            cursor = None
+            with sqlite3.connect(self.path) as connection:
+                columns = tupleToSQL(columns)
+                cursor = connection.cursor()
+                cursor.execute(f'''
+                    SELECT {columns}
+                    FROM {tableName} {where}
+                ''')
+            return cursor.fetchall()
+        except sqlite3.Error as err:
+            return err
+
+
+
+
+# db3 = DB('./data', 'cse2')
+# print("output : ", db3.readRows('student_details', ("enroll_num", "f_name","l_name")))
 # print(db3.deleteTable(t1))
 # print(db3.createTable(t1))
 # print(db3.addCol(t1,'c1',0))
