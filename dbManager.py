@@ -17,7 +17,6 @@ class DB:
     def __init__(self, path, filename=''):
         self.path = f"{path}{'' if filename == '' else '/'}{filename}.db"
 
-        print(self.path)
         with sqlite3.connect(self.path) as connection:
             pass
 
@@ -94,8 +93,6 @@ class DB:
             return cursor.fetchall()
         except sqlite3.Error as err:
             return err
-
-
 
 
 # db3 = DB('./data', 'cse2')
