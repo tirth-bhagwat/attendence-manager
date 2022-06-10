@@ -1,4 +1,5 @@
 import functools
+import os
 import sqlite3
 import re
 
@@ -19,6 +20,14 @@ class DB:
 
         with sqlite3.connect(self.path) as connection:
             pass
+
+    def isNotEmpty(self):
+        '''Moves the database file from EMPTY_DATA_DIR to DATA_DIR'''
+        if "/empty/" in self.path:
+            emptyInd = re.match(".*/empty/", self.path)
+            newPath = self.path[0:emptyInd.end()-6]+self.path[emptyInd.end():]
+            os.rename(self.path, newPath)
+            self.path = newPath
 
     def createTable(self, tableName):
         # possible errors:

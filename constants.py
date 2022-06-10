@@ -5,6 +5,7 @@ import logging
 class Constants:
     HOME_DIR = ''
     DATA_DIR = './data'
+    EMPTY_DATA_DIR = './data/empty'
     LOGGING_DIR = ''
 
     @classmethod

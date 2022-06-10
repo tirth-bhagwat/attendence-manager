@@ -22,19 +22,19 @@ def importFromCSV(newDB: DB):
     # Print instructions about formatting of the CSV file
     CON.print(
         "Enter complete path of the csv file.",
-        style=styles.INSTRUCTION_B, justify=CENTER, end=""
+        style=styles.YELLOW_INSTRUCTION_B, justify=CENTER, end=""
     )
     msg = '''The file should be formatted in the following way:\n["enrollment num", "last_name first_name middle_name"]'''
     CON.print(msg, style=styles.INSTRUCTION_B, justify=CENTER, end="")
 
-    path = CON.input("Enter path : ")   # Get path of CSV file.
+    path = CON.input(":")   # Get path of CSV file.
     while not os.path.isfile(path):
         # Loop until a valid path is entered.
         CON.print(
             "Invalid path... Please Retry !!",
             style=styles.ERROR, justify=CENTER, end=''
         )
-        path = CON.input()
+        path = CON.input(':')
 
     with open(path) as file:
         # Open and read the csv file.
@@ -44,7 +44,7 @@ def importFromCSV(newDB: DB):
         for i in reader:    # Loops over each line in the csv file.
 
             # Add a cloumn with name same as enroll_num to "attendence" table
-            newDB.addCol('attendence', '\"'+i[0]+'\"',"INTEGER")
+            newDB.addCol('attendence', '\"'+i[0]+'\"', "INTEGER")
 
             # Add details of student from csv to the "student_details" table
             #
@@ -62,6 +62,10 @@ def importFromCSV(newDB: DB):
                 (i[0], rowVal[1], rowVal[2], rowVal[0])
             )
 
+    # Move the DB file from EMPTY_DATA_DIR to DATA_DIR
+    # Because thr DB now has some data
+    newDB.isNotEmpty()
+
 
 def dataEntry():
     pass
@@ -73,22 +77,30 @@ def createClass():
     '''
 
     CON.print(
-        "Enter class name : ",
-        style=styles.INSTRUCTION_B, justify=CENTER, end=""
+        "Enter class name",
+        style=styles.YELLOW_INSTRUCTION_B, justify=CENTER, end=""
     )
 
-    inp = CON.input()   # Initial input
+    inp = CON.input(':')   # Initial input
 
-    while inp in Constants.AvailableDBs() and '/' not in inp:
+    while '/' in inp or inp in Constants.AvailableDBs():
         # Loop till a valid input is entered.
-        CON.print(
-            "Invalid class name... Please Retry !!",
-            style=styles.ERROR, justify=CENTER, end=''
-        )
-        inp = CON.input()
+        if inp in inp in Constants.AvailableDBs():
+            # If a class name already exists, print already exists
+            CON.print(
+                f'''Class "{inp}" already exists... Please Retry !!''',
+                style=styles.ERROR, justify=CENTER, end=''
+            )
+        else:
+            # If invalid characters are found in class name:
+            CON.print(
+                "Invalid class name... Please Retry !!",
+                style=styles.ERROR, justify=CENTER, end=''
+            )
+        inp = CON.input(':')
 
     # Create a new sqlite database with given name
-    newDB = DB(Constants.DATA_DIR, inp)
+    newDB = DB(Constants.EMPTY_DATA_DIR, inp)
 
     # Creating 2 tables
     newDB.createTable('student_details')
@@ -105,11 +117,15 @@ def createClass():
 
     # Ask for a how the data will be entered.
     CON.print(
-        "How would you like to enter the data : \n 1 - Import CSV\n 2 - Enter manually",
+        "How would you like to enter the data :",
+        style=styles.YELLOW_INSTRUCTION_B, justify=CENTER, end=""
+    )
+    CON.print(
+        "1 - Import CSV\n 2 - Enter manually",
         style=styles.INSTRUCTION_B, justify=CENTER, end=""
     )
 
-    inp = getMultipleChoiceInp(('1', '2'),CON)
+    inp = getMultipleChoiceInp(('1', '2'), CON)
 
     # Call appropriate functions based on the input.
     if inp == '1':

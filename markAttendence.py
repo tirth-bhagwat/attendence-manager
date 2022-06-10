@@ -215,7 +215,7 @@ def main():
     availableClasses = sorted(Constants.AvailableDBs())
 
     # Asking user to select a class
-    CON.print("Select a class: ", style=styles.INSTRUCTION_B, justify=CENTER)
+    CON.print("Select a class: ", style=styles.YELLOW_INSTRUCTION_B, justify=CENTER)
 
     # Adding columns to the table
     table.add_column(style=styles.NUMBER_B)
@@ -258,10 +258,10 @@ def main():
         justify=CENTER, style=styles.INSTRUCTION_B
     )
 
-    clsType = int(getMultipleChoiceInp(
+    clsType = getMultipleChoiceInp(
         validInputs=('1', '2'),
         console=CON
-    ))
+    )
 
     # Start taking attendence from user
     startAttendence(
