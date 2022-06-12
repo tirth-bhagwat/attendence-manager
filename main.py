@@ -1,11 +1,13 @@
 import os
+
 from rich.console import Console
 
-from constants import Constants
-import styles
-import markAttendence
-from utilities import *
+import analyser
 import createClass
+import markAttendence
+import styles
+from constants import Constants
+from utilities import *
 
 
 def main():
@@ -27,7 +29,6 @@ def main():
             # This can be logged as found an unknown folder xyz in empty_data_dir
             pass
 
-
     # Print welcome message
     CON.print(("="*36), justify=CENTER, style=styles.HEADING)
     CON.print(
@@ -38,17 +39,23 @@ def main():
 
     # Print first instruction
     CON.print(
-        "1 - Mark attendence.\n2 - Create new class.",
+        "1 - Mark attendence.\n2 - Analyze attendence.\n3 - Create new class.",
         justify=CENTER, style=styles.INSTRUCTION_B
     )
 
     # Get input for first instruction
-    inp = getMultipleChoiceInp(('1', '2'), CON)
+    inp = getMultipleChoiceInp(
+        validInputs=('1', '2', '3'),
+        console=CON
+    )
 
-    # If user selects '1' call markAttendence
+    # Call appropriate function based on user input
     if inp == '1':
         markAttendence.main()
     elif inp == '2':
+        analyser.main()
+    elif inp == '3':
         createClass.createClass()
+
 
 main()

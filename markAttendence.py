@@ -139,7 +139,7 @@ def _readTime():
         time = CON.input(f":")
 
 
-def startAttendence(
+def _startAttendence(
     dbName: str,
     date: str,
     time: str,
@@ -208,45 +208,8 @@ def main():
     '''
     Initiate the process of getting attendence.
     '''
-    # creating a table to store all present DBs/classes
-    table = Table(show_header=False, box=box.HEAVY)
-
-    # Get all availabe classes
-    availableClasses = sorted(Constants.AvailableDBs())
-
-    # Asking user to select a class
-    CON.print("Select a class: ", style=styles.YELLOW_INSTRUCTION_B, justify=CENTER)
-
-    # Adding columns to the table
-    table.add_column(style=styles.NUMBER_B)
-    table.add_column()
-
-    for i in range(0, len(availableClasses)):
-        # add rows/data to the table
-        table.add_row(f'{i+1}', f'{availableClasses[i]}')
-
-    # print the table
-    CON.print(table, justify=CENTER)
-
-    # Get input of selected DB/class
-    inp = CON.input(":")
-    while True:
-        if inp.isnumeric():
-            inp = int(inp)
-            if inp <= len(availableClasses) and inp >= 1:
-                selectedDB = availableClasses[inp-1]
-                break
-
-        else:
-            if inp in availableClasses:
-                selectedDB = inp
-                break
-
-        CON.print(
-            "Invalid option... Please Retry !!",
-            style=styles.ERROR, justify=CENTER
-        )
-        inp = CON.input(":")
+    # Ask user to select a class/DB for which to amrk attendence.
+    selectedDB=classSelector(CON)
 
     date = _readDate()
     time = _readTime()
@@ -264,7 +227,7 @@ def main():
     )
 
     # Start taking attendence from user
-    startAttendence(
+    _startAttendence(
         dbName=selectedDB,
         date=date,
         time=time,

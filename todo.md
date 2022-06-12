@@ -3,6 +3,8 @@
 ## Important
 
 - [ ] Add functionality to read students' attendence data.
+  - [x] Basic
+  - [ ] Advanced
 - [ ] Add better navigation
 
 ## Other

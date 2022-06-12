@@ -1,7 +1,7 @@
 import functools
 import os
-import sqlite3
 import re
+import sqlite3
 
 
 def tupleToSQL(tup):
@@ -15,11 +15,27 @@ def tupleToSQL(tup):
 
 
 class DB:
-    def __init__(self, path, filename=''):
-        self.path = f"{path}{'' if filename == '' else '/'}{filename}.db"
+    def __init__(
+        self,
+        path: str,
+        filename: str = ''
+    ):
+        self.path = f"{path}{'' if filename == '' else '/'}{filename}{'.db' if filename != '' else ''}"
 
         with sqlite3.connect(self.path) as connection:
             pass
+
+    def rows(self, tableName: str):
+        try:
+            with sqlite3.connect(self.path) as connection:
+                cur = connection.cursor()
+                cur.execute(f'''
+                    SELECT COUNT(*) FROM {tableName}
+                ''')
+                rows = cur.fetchall()[0][0]
+            return rows
+        except sqlite3.Error as err:
+            return err
 
     def isNotEmpty(self):
         '''Moves the database file from EMPTY_DATA_DIR to DATA_DIR'''
@@ -29,7 +45,7 @@ class DB:
             os.rename(self.path, newPath)
             self.path = newPath
 
-    def createTable(self, tableName):
+    def createTable(self, tableName: str):
         # possible errors:
         # table {} already exists
         # unrecognized token: "21C22001"
@@ -45,7 +61,7 @@ class DB:
         except sqlite3.Error as err:
             return err
 
-    def deleteTable(self, tableName):
+    def deleteTable(self, tableName: str):
         try:
             with sqlite3.connect(self.path) as connection:
                 connection.execute(f'''
@@ -89,7 +105,12 @@ class DB:
         except sqlite3.Error as err:
             return err
 
-    def readRows(self, tableName, columns, where=''):
+    def readRows(
+        self,
+        tableName: str,
+        columns: tuple,
+        where: str = ''
+    ):
         try:
             cursor = None
             with sqlite3.connect(self.path) as connection:
@@ -97,7 +118,7 @@ class DB:
                 cursor = connection.cursor()
                 cursor.execute(f'''
                     SELECT {columns}
-                    FROM {tableName} {where}
+                    FROM {tableName} {'' if where == '' else f'WHERE {where}'}
                 ''')
             return cursor.fetchall()
         except sqlite3.Error as err:
