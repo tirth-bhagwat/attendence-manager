@@ -4,7 +4,7 @@
 
 - [ ] Add functionality to read students' attendence data.
   - [x] Basic
-  - [ ] Advanced
+  - [x] Advanced
 - [ ] Add better navigation
 
 ## Other

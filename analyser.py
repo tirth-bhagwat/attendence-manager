@@ -30,19 +30,19 @@ def isValid(string):
         cond1 = "a<3","2<a<=90","*" \n
         cond2 = "2:3"\n
     returns False if invalid string,
-            tuple of (cond1,cond2) if valid string
+            dict of {'limits':"",'total':"",'lab':"",'lecture':""} if valid string
     '''
 
-    # list of regex patterns for 2, cond1 & cond2 respectively
+    # list of regex patterns for all conditions
     ptrns = [
         r"2",
+        r"^(((\d+:)|(:\d+)|(\d+:\d+))|(\*))",
         r"(^((((((\d+(<|(<=)))a((<|(<=))\d+))|(a((<|(<=))\d+))))|((((\d+(>|(>=)))a((>|(>=))\d+))|(a((>|(>=))\d+)))))))|(\*)",
-        r"^((\d+:)|(:\d+)|(\d+:\d+))"
-        # r"(^((((((\d+(<|(<=)))a((<|(<=))\d+))|(a((<|(<=))\d+))))|((((\d+(>|(>=)))a((>|(>=))\d+))|(a((>|(>=))\d+)))))))|(\*)",
-        # r"(^((((((\d+(<|(<=)))a((<|(<=))\d+))|(a((<|(<=))\d+))))|((((\d+(>|(>=)))a((>|(>=))\d+))|(a((>|(>=))\d+)))))))|(\*)",
+        r"(^((((((\d+(<|(<=)))a((<|(<=))\d+))|(a((<|(<=))\d+))))|((((\d+(>|(>=)))a((>|(>=))\d+))|(a((>|(>=))\d+)))))))|(\*)",
+        r"(^((((((\d+(<|(<=)))a((<|(<=))\d+))|(a((<|(<=))\d+))))|((((\d+(>|(>=)))a((>|(>=))\d+))|(a((>|(>=))\d+)))))))|(\*)",
     ]
 
-    # sepreate 2, cond1 & cond2 and store them in a list
+    # sepreate all conditions and store them in a list
     inps = string.strip().split(sep=" ")
 
     # Check for all 3 conditions with corresponding regex
@@ -54,8 +54,14 @@ def isValid(string):
             return False
     else:
         # Add required number of "" at end of list inps[1:3] if its length < 2
-        inps[1:3] += (2-len(inps[1:3]))*['']
-        return tuple(inps[1:3])
+        inps[1:5] += (4-len(inps[1:5]))*['']
+
+        return {
+            'limits': inps[1],
+            'total': inps[2],
+            'lab': inps[3],
+            'lecture': inps[4]
+        }
 
 
 def _doesSatisfy(num: float, condition: str):
@@ -330,8 +336,7 @@ def _oneStudent(
 def _wholeClass(
     console: Console,
     dbName: str,
-    condition: str,
-    limits: str
+    conditions: dict,
 ):
     '''
     Handles input/output when data for multiple students is required
@@ -340,13 +345,16 @@ def _wholeClass(
     fig, ax = plt.subplots()
 
     dbHandler = DB(Constants.DATA_DIR, dbName)
-
+    # reads data of all students from db
     students = dbHandler.readRows(
         'student_details',
         ('enroll_num',),
     )
+
+    # get only enroll nums from "students" list
     enrollNos = [i[0] for i in students]
 
+    # a dict to store attendence data of students
     final_attn = {
         'roll_nos': [],
         'lab': [],
@@ -354,7 +362,7 @@ def _wholeClass(
         'total': []
     }
     for ind, num in enumerate(enrollNos):
-
+        # this for loop adds data to the "final_attn" dict
         attn_raw = dbHandler.readRows(
             'attendence',
             ('type', num)
@@ -366,25 +374,29 @@ def _wholeClass(
         final_attn['lecture'].append(attn_lecture)
         final_attn['total'].append(attn_total)
 
-    limits = _convertToTuple(limits)
+    # Keep data of only students specified in the "limits" condition
+    limits = _convertToTuple(conditions['limits'])
     for typ in final_attn:
         final_attn[typ] = final_attn[typ][limits[0]:limits[1]]
 
-    if condition not in (' ','','*'):
-        for i in range(len(final_attn['roll_nos'])):
-            targKeys = ['total']  # , 'lab', 'lecture']
+    # Iterate over each roll num of final_attn['roll_nos']
+    for i in range(len(final_attn['roll_nos'])):
+        targKeys = ['total', 'lab', 'lecture']
 
-            for key in targKeys:
-                if not _doesSatisfy(final_attn[key][i], condition):
-                    pass
-                for k in final_attn.keys():
-                    final_attn[k][i] = None
+        flag = True
+        for key in targKeys:
+            if conditions[key] not in (' ', '', '*'):
+                if not _doesSatisfy(final_attn[key][i], conditions[key]):
+                    flag = False
+                    break
+        
+        if flag == False:
+            for k in final_attn.keys():
+                final_attn[k][i] = None
 
-        for key in final_attn.keys():
-            final_attn[key] = list(
-                filter(lambda x: x is not None, final_attn[key]))
-
-    print(final_attn)
+    for key in final_attn.keys():
+        final_attn[key] = list(
+            filter(lambda x: x is not None, final_attn[key]))
 
     for key, val in final_attn.items():
 
@@ -427,7 +439,9 @@ def main():
         style=styles.INSTRUCTION_B, justify=CENTER
     )
 
+    help_text = '''Enter 1 to get info of one student\n "2 numOfStudents total lab lect" to filter students by conditions.'''
     while True:
+
         inp = CON.input(":")
         if inp.strip() == 1:
             _oneStudent(CON, selectedDB)
@@ -435,13 +449,13 @@ def main():
 
         elif inp.strip().lower() == 'h':
             CON.print(
-                'hwwwwlp',
+                help_text,
                 style=styles.INSTRUCTION, justify="center"
             )
 
         elif isValid(inp.strip().lower()) != False:
             validInps = isValid(inp.strip().lower())
-            _wholeClass(CON, selectedDB, *validInps)
+            _wholeClass(CON, selectedDB, validInps)
             break
 
         else:
@@ -450,10 +464,10 @@ def main():
                 style=styles.ERROR, justify="center"
             )
 
-
+# main()
 # _oneStudent(CON, 'cse2')
 # _wholeClass(CON, 'cse1-short', 'a<70', '*')
-_wholeClass(CON, 'cse1', '', '*')
-# print(doesSatisfy(10,'a<50'))
+# _wholeClass(CON, 'cse1', '', '*')
+# print(_doesSatisfy(10,'a<50'))
 # _wholeClass(CON, 'cse1-short')
 # main()

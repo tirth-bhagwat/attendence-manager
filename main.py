@@ -1,3 +1,5 @@
+import importCheck  # checks if all required modules are available
+
 import os
 
 from rich.console import Console
@@ -17,6 +19,14 @@ def main():
     Constants.EMPTY_DATA_DIR = './data/empty'
     Constants.LOGGING_DIR = './logs'
     Constants.setupLogger()
+
+    # Make required diretories if they dont exist.
+    if not os.path.exists(Constants.DATA_DIR):
+        os.mkdir(Constants.DATA_DIR)
+    if not os.path.exists(Constants.EMPTY_DATA_DIR):
+        os.mkdir(Constants.EMPTY_DATA_DIR)
+    if not os.path.exists(Constants.LOGGING_DIR):
+        os.mkdir(Constants.LOGGING_DIR)
 
     CENTER = 'center'
     CON = Console()
