@@ -13,6 +13,123 @@ CON = Console()
 CENTER = 'center'
 
 
+def _convertToTuple(limits: str):
+    if limits in ["", "*"]:
+        return (None, None)
+
+    limits = limits.split(":")
+    arg1 = None if limits[0] == "" else int(limits[0])+1
+    arg2 = None if limits[1] == "" else int(limits[1])+1
+    return (arg1, arg2)
+
+
+def isValid(string):
+    '''
+    Checks if given string is in the format "2 cond1 cond2"\n
+    e.g. \n
+        cond1 = "a<3","2<a<=90","*" \n
+        cond2 = "2:3"\n
+    returns False if invalid string,
+            tuple of (cond1,cond2) if valid string
+    '''
+
+    # list of regex patterns for 2, cond1 & cond2 respectively
+    ptrns = [
+        r"2",
+        r"(^((((((\d+(<|(<=)))a((<|(<=))\d+))|(a((<|(<=))\d+))))|((((\d+(>|(>=)))a((>|(>=))\d+))|(a((>|(>=))\d+)))))))|(\*)",
+        r"^((\d+:)|(:\d+)|(\d+:\d+))"
+        # r"(^((((((\d+(<|(<=)))a((<|(<=))\d+))|(a((<|(<=))\d+))))|((((\d+(>|(>=)))a((>|(>=))\d+))|(a((>|(>=))\d+)))))))|(\*)",
+        # r"(^((((((\d+(<|(<=)))a((<|(<=))\d+))|(a((<|(<=))\d+))))|((((\d+(>|(>=)))a((>|(>=))\d+))|(a((>|(>=))\d+)))))))|(\*)",
+    ]
+
+    # sepreate 2, cond1 & cond2 and store them in a list
+    inps = string.strip().split(sep=" ")
+
+    # Check for all 3 conditions with corresponding regex
+    # and retuen True if all are matching else False
+    for ind, val in enumerate(inps):
+        match = re.fullmatch(ptrns[ind], val)
+
+        if match is None:
+            return False
+    else:
+        # Add required number of "" at end of list inps[1:3] if its length < 2
+        inps[1:3] += (2-len(inps[1:3]))*['']
+        return tuple(inps[1:3])
+
+
+def _doesSatisfy(num: float, condition: str):
+    '''
+    Checks if the given number satisfies the given condition\n
+    : num : number in float\n
+    : condition : a valid condition like : 23<a<89, a>9, etc\n
+    :: return :: None if invalid condition, True / False if condition is satisfied or not\n
+    '''
+
+    num = float(num)
+
+    # dict of functions related to a given operator
+    operators = {
+        '<': float.__lt__,
+        '<=': float.__le__,
+        '>': float.__gt__,
+        '>=': float.__ge__
+    }
+
+    # list to store numbers and conditionaloperators from given string/condition
+    numLst, oprLst = ['', ''], ['', '']
+    # A variable to store the position where in the numLst/oprLst the
+    # character selected by for loop (i.e. val) will be stored.
+    i = 0
+    for ind, val in enumerate(condition):
+
+        # ignore "="
+        if val == '=':
+            continue
+
+        # If zeroth char is a number => ternary condition (12<a<=30)
+        #                            => else binary condition (a<12)
+        if ind == 0 and val.isnumeric():
+            numLst[i] += val
+
+        else:
+            tmp = ''
+            if val.isnumeric():
+                # if val is a number stores it in numLst[i]
+                numLst[i] += val
+
+            elif val in ['<', '>']:
+                # if val is < or > stores it in oprLst[i] along with the succeeding "=" if present
+                tmp += val
+                if condition[ind+1] == '=':
+                    tmp += '='
+                oprLst[i] += tmp
+
+                i = 1 if i == 0 else 1
+
+    if condition.startswith('a'):  # => binary condition
+
+        # stores the first number
+        n1 = float(numLst[-1])
+        # stores the relavant function from the operators list
+        op1 = operators[oprLst[0]]
+
+        # calls the func stored in op1 & returns its result
+        return op1(num, n1)
+
+    else:  # => ternary condition
+        # stores the first & second number
+        n1 = float(numLst[0])
+        n2 = float(numLst[1])
+
+        # stores the relavant functions from the operators list
+        op1 = operators[oprLst[0]]
+        op2 = operators[oprLst[1]]
+
+        # calls the funcs stored in op1 & op2 returns True only if both are True
+        return (op1(num, n1) and op2(num, n2))
+
+
 def _searchStudent(
     console: Console,
     students: Dict[int, str],
@@ -212,7 +329,9 @@ def _oneStudent(
 
 def _wholeClass(
     console: Console,
-    dbName: str
+    dbName: str,
+    condition: str,
+    limits: str
 ):
     '''
     Handles input/output when data for multiple students is required
@@ -222,18 +341,19 @@ def _wholeClass(
 
     dbHandler = DB(Constants.DATA_DIR, dbName)
 
-    enrollNos = dbHandler.readRows(
+    students = dbHandler.readRows(
         'student_details',
         ('enroll_num',),
     )
-    enrollNos = [i[0] for i in enrollNos]
+    enrollNos = [i[0] for i in students]
 
     final_attn = {
+        'roll_nos': [],
         'lab': [],
         'lecture': [],
         'total': []
     }
-    for num in enrollNos:
+    for ind, num in enumerate(enrollNos):
 
         attn_raw = dbHandler.readRows(
             'attendence',
@@ -241,27 +361,54 @@ def _wholeClass(
         )
 
         attn_lab, attn_lecture, attn_total = _percentAttn(attn_raw)
-
+        final_attn['roll_nos'].append(ind+1)
         final_attn['lab'].append(attn_lab)
         final_attn['lecture'].append(attn_lecture)
         final_attn['total'].append(attn_total)
 
+    limits = _convertToTuple(limits)
+    for typ in final_attn:
+        final_attn[typ] = final_attn[typ][limits[0]:limits[1]]
+
+    if condition not in (' ','','*'):
+        for i in range(len(final_attn['roll_nos'])):
+            targKeys = ['total']  # , 'lab', 'lecture']
+
+            for key in targKeys:
+                if not _doesSatisfy(final_attn[key][i], condition):
+                    pass
+                for k in final_attn.keys():
+                    final_attn[k][i] = None
+
+        for key in final_attn.keys():
+            final_attn[key] = list(
+                filter(lambda x: x is not None, final_attn[key]))
+
+    print(final_attn)
+
     for key, val in final_attn.items():
+
+        if key == 'roll_nos':
+            continue
+
         if key == 'lab':
-            incr = 0.75
+            incr = -0.25
         elif key == 'lecture':
-            incr = 1
+            incr = 0
         elif key == 'total':
-            incr = 1.25
+            incr = +0.25
 
         bar = ax.bar(
-            [i+incr for i in range(len(val))],
+            [i+incr for i in final_attn['roll_nos']],
             val,
             width=0.25,
         )
         plt.bar_label(bar)
 
     plt.legend(['Lab', 'Lecture', 'Total'])
+    plt.xticks(final_attn['roll_nos'])
+    plt.xlabel("Roll Number")
+    plt.ylabel("Percentage attendence")
     plt.show()
 
 
@@ -280,20 +427,33 @@ def main():
         style=styles.INSTRUCTION_B, justify=CENTER
     )
 
-    inp = getMultipleChoiceInp(
-        validInputs=('1', '2', 'h'),
-        console=CON,
-        help=(2, 'hwlpppppp')   # To be added in next commit
-    )
+    while True:
+        inp = CON.input(":")
+        if inp.strip() == 1:
+            _oneStudent(CON, selectedDB)
+            break
 
-    # Call appropriate function based on user's selection
-    if inp == '1':
-        _oneStudent(CON, selectedDB)
-    elif inp == '2':
-        _wholeClass(CON, selectedDB)
+        elif inp.strip().lower() == 'h':
+            CON.print(
+                'hwwwwlp',
+                style=styles.INSTRUCTION, justify="center"
+            )
+
+        elif isValid(inp.strip().lower()) != False:
+            validInps = isValid(inp.strip().lower())
+            _wholeClass(CON, selectedDB, *validInps)
+            break
+
+        else:
+            CON.print(
+                "Invalid input... Please Retry !!",
+                style=styles.ERROR, justify="center"
+            )
 
 
 # _oneStudent(CON, 'cse2')
-# _wholeClass(CON, 'cse1')
+# _wholeClass(CON, 'cse1-short', 'a<70', '*')
+_wholeClass(CON, 'cse1', '', '*')
+# print(doesSatisfy(10,'a<50'))
 # _wholeClass(CON, 'cse1-short')
 # main()
